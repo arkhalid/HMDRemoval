@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<rift2kinect_02 type_id="opencv-matrix">
+  <rows>4</rows>
+  <cols>4</cols>
+  <dt>f</dt>
+  <data>
+    9.80483294e-001 -3.07197869e-003 1.96578801e-001 -1.10690279e+001
+    -2.61384156e-003 9.99585867e-001 2.86577344e-002 6.78102016e+000
+    -1.96585402e-001 -2.86122561e-002 9.80069280e-001 2.57535744e+000 0.
+    0. 0. 1.</data></rift2kinect_02>
+</opencv_storage>

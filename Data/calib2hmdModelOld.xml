@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<calib2hmdModel type_id="opencv-matrix">
+  <rows>4</rows>
+  <cols>4</cols>
+  <dt>f</dt>
+  <data>
+    -9.75838776e+001 1.77117634e+001 -1.58966703e+001 0.
+    -1.69582977e+001 -9.88201218e+001 -6.00244999e+000 0.
+    -1.66983719e+001 -3.14769840e+000 9.89947052e+001 0.
+    -2.72006226e+000 -3.19658947e+000 8.16467133e+001 1.</data></calib2hmdModel>
+</opencv_storage>
