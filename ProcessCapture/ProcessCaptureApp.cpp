@@ -10,7 +10,6 @@ bool ProcessCaptureApp::initGLUT(int argc, char** argv)
 	glutDisplayFunc(displayGL);
 	glutKeyboardFunc(keyGL);
 	return true;
-
 }
 
 std::vector<float> ProcessCaptureApp::UnsignedCharToFloat(std::vector<unsigned char> in)
@@ -92,10 +91,6 @@ float ProcessCaptureApp::deg2rad(float degrees)
 bool ProcessCaptureApp::initKinect()
 {
 	m_kinCap = new KinectCapture();
-	float vertices[] = { 0,5,5,0,0,5,5,5,5,5,0,5 };
-	float colorsarr[] = { 255,255,255,255,255,255,255,255,255,255,255,255 };
-	vector<float> vertvec(vertices, vertices + sizeof(vertices) / sizeof(float));
-	vector<float> colorsvec(colorsarr, colorsarr + sizeof(colorsarr) / sizeof(float));
 	if (!m_kinCap->init())
 		{
 			std::cout << "Couldn't intialize Kinect" << std::endl;
@@ -150,7 +145,6 @@ bool ProcessCaptureApp::initOculus()
 	{
 		return true;
 	}
-
 }
 
 bool ProcessCaptureApp::initFaceAlignment(bool SaveCameraPosition)
@@ -351,6 +345,7 @@ void ProcessCaptureApp::display()
 		glMatrixMode(GL_MODELVIEW); glPopMatrix(); assert(glGetError() == GL_NO_ERROR);
 		glMatrixMode(GL_PROJECTION); glPopMatrix(); assert(glGetError() == GL_NO_ERROR);
 	}
+	//Normal Display mode that renders models and the pointcloud
 	else
 	{
 
@@ -362,7 +357,7 @@ void ProcessCaptureApp::display()
 			//m_modelAligner->GetTransforms(m_latestOcTranform,0,0,0,0,0,0, Kinect2HMDmodel, Kinect2FaceModel);
 			m_ModelInfoList[1].modelTranform = mat4FromFloatArray((float *)Mat(Kinect2HMDmodel).data);
 			m_ModelInfoList[0].modelTranform = mat4FromFloatArray((float *)Mat(Kinect2FaceModel).data);
-			for (int i = 0; i < m_ModelInfoList.size(); i++)
+			for (int i = 0; i < 1; i++)
 			{
 				RenderObject* currModel = m_ModelInfoList[i].mesh;
 				if (currModel->GetHasFaces())

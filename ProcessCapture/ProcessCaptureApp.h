@@ -1,5 +1,5 @@
 #pragma once
-
+//GL helper has been changed ... Model is no longer scaled by 100 ... This code will no longer work ... Add scaling to this code
 #include "GLHelper.h"
 #include <iostream>
 #include <string.h>
@@ -46,6 +46,7 @@ private:
 	float deg2rad(float degrees);
 	void checkForSaveOculusCameraTransform();
 	void ModifyMatrix(float a_x, float a_y, float a_z, cv::Mat &InOut);
+
 	algebra3::mat4 m_view;
 	int m_WindowWidth;
 	int m_WindowHeight;

@@ -162,7 +162,6 @@ GLuint createShaderProgram(const string& vShaderFilename, const string& fShaderF
 		cout << "Program could not be validated. Error Log: " << endl << buff << endl;
 		die();
 	}
-
 	return program;
 }
 
@@ -201,9 +200,9 @@ bool ReadPLY(string filename, vector<float> &vertices, vector<float> &colors, ve
 		{
 			fin.getline(line, 1024);
 			sscanf(line, "%f %f %f %d %d %d %d", &vertList[0], &vertList[1], &vertList[2], &colorList[0], &colorList[1], &colorList[2], &dummy2);
-			vertices.push_back(vertList[0] *100.0);
-			vertices.push_back(vertList[1] * 100.0);
-			vertices.push_back(vertList[2] * 100.0);
+			vertices.push_back(vertList[0] );
+			vertices.push_back(vertList[1] );
+			vertices.push_back(vertList[2] );
 			colors.push_back(static_cast<float>(colorList[0]) / 255.0);
 			colors.push_back(static_cast<float>(colorList[1]) / 255.0);
 			colors.push_back(static_cast<float>(colorList[2]) / 255.0);
@@ -229,29 +228,43 @@ bool ReadPLY(string filename, vector<float> &vertices, vector<float> &colors, ve
 
 RenderObject::RenderObject(vector<float> *vertices, vector<float> *colors, vector<unsigned int> *indices):m_vertices(vertices),m_colors(colors),m_indices(indices)
 {
-	glGenVertexArrays(1, &m_vao);
-	glBindVertexArray(m_vao);
-	glGenBuffers(1, &m_vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-	glBufferData(GL_ARRAY_BUFFER, vertices->size() * sizeof(GLfloat), vertices->data(), GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glGenBuffers(1, &m_cbo);
-	glBindBuffer(GL_ARRAY_BUFFER, m_cbo);
-	glBufferData(GL_ARRAY_BUFFER,  colors->size() * sizeof(GLfloat), colors->data(), GL_STATIC_DRAW);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	if (vertices == NULL || colors == NULL || indices == NULL)
+	{
+		std::cout << "Couldn't Create Render Objects. Check if all inputs have been initialized" << std::endl;
+	}
+	else
+	{
+		glGenVertexArrays(1, &m_vao);
+		glBindVertexArray(m_vao);
+		glGenBuffers(1, &m_vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+		glBufferData(GL_ARRAY_BUFFER, vertices->size() * sizeof(GLfloat), vertices->data(), GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+		glGenBuffers(1, &m_cbo);
+		glBindBuffer(GL_ARRAY_BUFFER, m_cbo);
+		glBufferData(GL_ARRAY_BUFFER, colors->size() * sizeof(GLfloat), colors->data(), GL_STATIC_DRAW);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-	glGenBuffers(1, &m_elembuf);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_elembuf);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices->size() * sizeof(GLuint), indices->data(), GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glBindVertexArray(0);
-	m_indCount = m_indices->size();
-	m_vertCount = m_vertices->size()/3;
-	m_hasVerts = true;
-	m_hasColors = true;
-	m_hasFaces = true;
+		glGenBuffers(1, &m_elembuf);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_elembuf);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices->size() * sizeof(GLuint), indices->data(), GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glBindVertexArray(0);
+		m_indCount = m_indices->size();
+		m_vertCount = m_vertices->size() / 3;
+		m_vertices = new vector<float>();
+		m_colors = new vector<float>();
+		m_indices = new vector<unsigned int>();
+		*m_vertices = *vertices;
+		*m_colors = *colors;
+		*m_indices = *indices;
+
+		m_hasVerts = true;
+		m_hasColors = true;
+		m_hasFaces = true;
+	}
 }
 
 RenderObject::RenderObject(vector<float>* vertices, vector<float>* colors)
@@ -275,6 +288,83 @@ RenderObject::RenderObject(vector<float>* vertices, vector<float>* colors)
 	m_hasVerts = true;
 	m_hasColors = true;
 	m_hasFaces = false;
+}
+
+bool RenderObject::AddTexCoords(vector<float>* texCoords)
+{
+	if (texCoords == NULL)
+	{
+		std::cout << "Couldn't add textures. Check if all inputs have been initialized" << std::endl;
+		return false;
+	}
+	else if(!m_hasVerts || !m_hasFaces)
+	{
+		std::cout << "This render object is not a mesh" << std::endl;
+		return false;
+	}
+	else if (!m_hasColors)
+	{
+		if (m_vertCount == texCoords->size() / 2)
+		{
+			glBindVertexArray(m_vao);
+			glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+			glBufferData(GL_ARRAY_BUFFER, m_vertices->size() * sizeof(GLfloat), m_vertices->data(), GL_STATIC_DRAW);
+			glEnableVertexAttribArray(0);
+			glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glGenBuffers(1, &m_tbo);
+			glBindBuffer(GL_ARRAY_BUFFER, m_tbo);
+			glBufferData(GL_ARRAY_BUFFER, texCoords->size() * sizeof(GLfloat), texCoords->data(), GL_STATIC_DRAW);
+			glEnableVertexAttribArray(2);
+			glVertexAttribPointer((GLuint)2, 2, GL_FLOAT, GL_FALSE, 0, 0);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_elembuf);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indices->size() * sizeof(GLuint), m_indices->data(), GL_STATIC_DRAW);
+			glEnableVertexAttribArray(0);
+			glBindVertexArray(0);
+
+			m_texCoords = new vector<float>;
+			*m_texCoords = *texCoords;
+			return true;
+		}
+		else
+		{
+			std::cout << "Size of texCoords buffer is not correct" << std::endl;
+			return false;
+		}
+	}
+	else
+	{
+		if (m_vertCount == texCoords->size() / 2)
+		{
+			glBindVertexArray(m_vao);
+			glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+			glBufferData(GL_ARRAY_BUFFER, m_vertices->size() * sizeof(GLfloat), m_vertices->data(), GL_STATIC_DRAW);
+			glEnableVertexAttribArray(0);
+			glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glBindBuffer(GL_ARRAY_BUFFER, m_cbo);
+			glBufferData(GL_ARRAY_BUFFER, m_colors->size() * sizeof(GLfloat), m_colors->data(), GL_STATIC_DRAW);
+			glEnableVertexAttribArray(1);
+			glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glGenBuffers(1, &m_tbo);
+			glBindBuffer(GL_ARRAY_BUFFER, m_tbo);
+			glBufferData(GL_ARRAY_BUFFER, texCoords->size() * sizeof(GLfloat), texCoords->data(), GL_STATIC_DRAW);
+			glEnableVertexAttribArray(2);
+			glVertexAttribPointer((GLuint)2, 2, GL_FLOAT, GL_FALSE, 0, 0);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_elembuf);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indices->size() * sizeof(GLuint), m_indices->data(), GL_STATIC_DRAW);
+			glEnableVertexAttribArray(0);
+			glBindVertexArray(0);
+
+			m_texCoords = new vector<float>;
+			*m_texCoords = *texCoords;
+			return true;
+		}
+		else
+		{
+			std::cout << "Size of texCoords buffer is not correct" << std::endl;
+			return false;
+		}
+	}
+	return false;
 }
 
 
@@ -336,3 +426,50 @@ bool RenderObject::GetHasFaces()
 	return m_hasFaces;
 }
 
+
+Texture::Texture()
+{
+}
+
+Texture::~Texture()
+{}
+
+Texture::Texture(cv::Mat image, GLint minMagFiler, GLint wrapMode)
+{
+	if (image.rows > 0 && image.cols > 0)
+	{
+		glGenTextures(1, &m_tex);
+		glBindTexture(GL_TEXTURE_2D, m_tex);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minMagFiler);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, minMagFiler);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapMode);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapMode);
+		glTexImage2D(GL_TEXTURE_2D, 0,  GL_RGBA, image.cols, image.rows,0, GL_BGRA, GL_UNSIGNED_BYTE, (GLvoid*)image.data);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+	else
+	{
+		std::cout << "Could not create texture" << std::endl;
+	}
+}
+
+bool Texture::UpdateTexture(cv::Mat image)
+{
+	if (image.rows > 0 && image.cols > 0)
+	{
+		glBindTexture(GL_TEXTURE_2D, m_tex);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.cols, image.rows, 0, GL_BGRA, GL_UNSIGNED_BYTE, (GLvoid*)image.data);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		return true;
+	}
+	else
+	{
+		std::cout << "Could not create texture" << std::endl;
+		return false;
+	}
+}
+
+GLuint Texture::GetTexture()
+{
+	return m_tex;
+}

@@ -4,9 +4,8 @@
 #include <GL/glew.h>
 #include <string>
 #include "algebra3.h"
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
 #include <vector>
+#include <opencv2\opencv.hpp>
 void die();
 void dieOnGLError(const string& errMessage);
 void dieOnInvalidIndex(int k, const std::string& err);
@@ -32,6 +31,7 @@ public:
 	RenderObject();
 	RenderObject(vector<float> *vertices, vector<float> *colors, vector<unsigned int> *indices);
 	RenderObject(vector<float> *vertices, vector<float> *colors);
+	bool AddTexCoords(vector<float> *TexCoords);
 	~RenderObject();
 
 	int GetIndCount();
@@ -51,17 +51,35 @@ private:
 	bool m_hasColors;
 	bool m_hasNormals;
 	bool m_hasFaces;
+	bool m_hasTexCoords;
 	int m_indCount;
 	int m_vertCount;
 	vector<unsigned int>* m_indices;
 	vector<float>* m_vertices;
 	vector<float>* m_colors;
 	vector<float>* m_normals;
+	vector<float>* m_texCoords;
 	GLuint m_vao;
 	GLuint m_vbo;
 	GLuint m_cbo;
+	GLuint m_tbo;
 	GLuint m_elembuf;
 
+};
+
+class Texture
+{
+public:
+	Texture();
+	~Texture();
+
+	Texture(cv::Mat image, GLint minMagFiler, GLint wrapMode);
+	bool UpdateTexture(cv::Mat image);
+	GLuint GetTexture();
+private:
+	GLuint m_tex;
+	int m_originalWidth;
+	int m_originalHeight;
 };
 
 #endif
