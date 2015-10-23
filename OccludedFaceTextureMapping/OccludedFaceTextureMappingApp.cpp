@@ -2,13 +2,13 @@
 #include <opencv2/calib3d/calib3d.hpp>
 #include <string>
 using namespace std;
-OccludedFaceTextureMapper::OccludedFaceTextureMapper() :m_windowWidth(1024), m_windowHeight(1024), m_test_mode(false), m_test_mode_image(false), m_untextured_mode(false), m_saveImage(false)
+OccludedFaceTextureMapper::OccludedFaceTextureMapper() :m_windowWidth(800), m_windowHeight(800), m_test_mode(false), m_test_mode_image(false), m_untextured_mode(false), m_saveImage(false)
 {
 	m_transx = 0;
 	m_transy = 0;
-	m_transz = 0.17;
+	m_transz = 0;
 	m_rotx = 0;
-	m_roty = 15;
+	m_roty = 0;
 	m_rotz = 0;
 	m_sclx = 1;
 	m_scly = 1;
@@ -46,7 +46,7 @@ cv::Mat OccludedFaceTextureMapper::cameraPoseEstimate(vector<cv::Point2f> imageP
 	cv::Mat tvec = cv::Mat::zeros(3, 1, CV_32F);
 	cv::Mat rotMat = cv::Mat::zeros(3,3,CV_32F);
 	m_distMat = cv::Mat::zeros(5, 1, CV_32F);
-	cv::solvePnP(worldPoints, imagePoints, m_camMat, m_distMat, rvec, tvec,false, CV_EPNP);
+	cv::solvePnP(worldPoints, imagePoints, m_camMat, m_distMat, rvec, tvec,false, CV_P3P);
 	cv::Rodrigues(rvec, rotMat);
 	rotMat.copyTo(out.rowRange(0, 3).colRange(0, 3));
 	tvec.copyTo(out.rowRange(0, 3).col(3));
@@ -107,6 +107,7 @@ void OccludedFaceTextureMapper::UpdateTexturesUsingLiveData()
 		split(img, imageChannels);
 		imageChannels.push_back(255 * Mat::ones(img.rows, img.cols, CV_8U));
 		merge(imageChannels, img);
+		undistort(img, img, m_cam1Info.camMat, m_cam1Info.distMat);
 		if (!m_cam1Info.imageTex->UpdateTexture(img))
 		{
 			std::cout << "Could not update texture" << std::endl;
@@ -116,7 +117,7 @@ void OccludedFaceTextureMapper::UpdateTexturesUsingLiveData()
 void OccludedFaceTextureMapper::display()
 {
 	//Update texture using live image
-	UpdateTexturesUsingLiveData();
+	//UpdateTexturesUsingLiveData();
 	
 	//Rendering model to scene
 
@@ -277,12 +278,12 @@ inline float OccludedFaceTextureMapper::deg2rad(float degrees)
 void OccludedFaceTextureMapper::keyFunc(unsigned char key, int x, int y)
 {
 	switch (key) {
-	case '1': m_transx -= 0.01; printf("m_transx = %f \n", m_transx); break;
-	case '2': m_transx += 0.01; printf("m_transx = %f \n", m_transx);break;
-	case '3': m_transy -= 0.01; printf("m_transy = %f \n", m_transy);  break;
-	case '4': m_transy += 0.01; printf("m_transy = %f \n", m_transy);  break;
-	case '5': m_transz -= 0.01; printf("m_transz = %f \n", m_transz); break;
-	case '6': m_transz += 0.01; printf("m_transz = %f \n", m_transz); break;
+	case '1': m_transx -= 10; printf("m_transx = %f \n", m_transx); break;
+	case '2': m_transx += 10; printf("m_transx = %f \n", m_transx);break;
+	case '3': m_transy -= 10; printf("m_transy = %f \n", m_transy);  break;
+	case '4': m_transy += 10; printf("m_transy = %f \n", m_transy);  break;
+	case '5': m_transz -= 10; printf("m_transz = %f \n", m_transz); break;
+	case '6': m_transz += 10; printf("m_transz = %f \n", m_transz); break;
 	case 'q': m_rotx -= 0.1; printf("m_rotx = %f \n", m_rotx); break;
 	case 'w': m_rotx += 0.1; printf("m_rotx = %f \n", m_rotx); break;
 	case 'e': m_roty -= 1.0f; printf("m_roty = %f \n", m_roty); break;
@@ -334,6 +335,9 @@ bool OccludedFaceTextureMapper::initCameras()
 		m_cam1Info.imgHeight = m_cam1Info.cap.get(CV_CAP_PROP_FRAME_HEIGHT);
 		return true;
 	}
+
+	int camNums[] = { 2,1,3 };
+
 }
 
 bool OccludedFaceTextureMapper::createRenderObjects()
@@ -342,30 +346,27 @@ bool OccludedFaceTextureMapper::createRenderObjects()
 	vector<float> colors;
 	vector<unsigned int> indices;
 	vector<float> texCoords;
-	ReadPLY("./../Models/MannequinHeadCleanWithMarkers.ply", vertices, colors, indices);
+	ReadPLY("./../Models/Mannequin0CleanCentered.ply", vertices, colors, indices);
 	m_faceModelInfo.mesh = new RenderObject(&vertices, &colors, &indices);
-	m_faceModelInfo.modelTranform = identity3D();
-	
+	//m_faceModelInfo.modelTranform = identity3D();
+	m_faceModelInfo.modelTranform = translation3D(vec3(0, -30, -620)) * rotation3D(vec3(1, 0, 0), -79) * rotation3D(vec3(0, 1, 0), 0) * rotation3D(vec3(0, 0, 1), -145.6);
 	vector<cv::Point2f> imgPoints;
 	vector<cv::Point3f> worldPoints;
-	//imgPoints.push_back(cv::Point2f(332.8021047227926, 100.2138090349076));
-	//imgPoints.push_back(cv::Point2f(576.555427914991, 364.761439785564));
-	//imgPoints.push_back(cv::Point2f(378.142144638404, 375.658354114713));
-	//imgPoints.push_back(cv::Point2f(496.547176751885, 151.710134265220));
-	imgPoints.push_back(cv::Point2f(332.6638334041649 ,  061.6213344666383));//
-	imgPoints.push_back(cv::Point2f(581.8429831288344  , 310.7799079754601));
-	imgPoints.push_back(cv::Point2f(382.228556206713  , 338.0554075652637));
-	imgPoints.push_back(cv::Point2f(503.7830336882528  , 109.0158840984465));
-	worldPoints.push_back(cv::Point3f(0.218356700000000, 0.0445314000000000, -0.570620883333333));//blue
-	worldPoints.push_back(cv::Point3f(0.231745464285714, 0.0259706071428572, -0.575379797619048));//green
-	worldPoints.push_back(cv::Point3f(0.219618000000000, 0.0238599166666667, -0.573512833333333));//magenta
-	worldPoints.push_back(cv::Point3f(0.229610375000000, 0.0390814583333333, -0.574926486111111));//yellow
-	
-	cv::Mat img;
-	img = imread("./../Data/image_0.png");
-	m_Camera2Face = cameraPoseEstimate(imgPoints, worldPoints);
 
-	//img = imread("./../Data/imgAdjusted.png");
+	imgPoints.push_back(cv::Point2f(423.8102 , 381.2220));
+	imgPoints.push_back(cv::Point2f(514.0216 ,  82.4928));
+	imgPoints.push_back(cv::Point2f(240.5784 , 313.1655));
+	imgPoints.push_back(cv::Point2f(282.8874 , 103.0831));
+
+
+	worldPoints.push_back(cv::Point3f(50.6372  ,122.4560 ,  64.4402));//magenta
+	worldPoints.push_back(cv::Point3f(53.7263  ,110.8696 ,  41.4052));//yellow
+	worldPoints.push_back(cv::Point3f(36.7116  ,124.9903  , 58.4990));//green
+	worldPoints.push_back(cv::Point3f(37.4948 , 120.7907  , 40.8366));//blue
+	cv::Mat img;
+	img = imread("./../Data/image_new.png");
+	m_Camera2Face = cameraPoseEstimate(imgPoints, worldPoints);
+	m_cam1Info.Camera2Face = cameraPoseEstimate(imgPoints, worldPoints);
 	vector<Mat> image1Channels(3);
 	split(img, image1Channels);
 	image1Channels.push_back(255 * Mat::ones(img.rows, img.cols, CV_8U));
@@ -378,8 +379,25 @@ bool OccludedFaceTextureMapper::createRenderObjects()
 		std::cout << "Couldn't add tex coordinates" << std::endl;
 	}
 
+	//Calculate reporojection error
+	Matx41f pt;
 	
-
+	pt = cv::Matx41f(worldPoints[0].x, worldPoints[0].y, worldPoints[0].z, 1);
+	Mat proj = m_cam1Info.camMat *  m_Camera2Face.rowRange(0, 3) * Mat(pt);
+	proj = proj / proj.at<float>(2, 0);
+	std::cout << "Proj 0 = " << proj << std::endl;
+	pt = cv::Matx41f(worldPoints[1].x, worldPoints[1].y, worldPoints[1].z, 1);
+	proj = m_cam1Info.camMat *  m_Camera2Face.rowRange(0, 3) * Mat(pt);
+	proj = proj / proj.at<float>(2, 0);
+	std::cout << "Proj 1 = " << proj << std::endl;
+	pt = cv::Matx41f(worldPoints[2].x, worldPoints[2].y, worldPoints[2].z, 1);
+	proj = m_cam1Info.camMat *  m_Camera2Face.rowRange(0, 3) * Mat(pt);
+	proj = proj / proj.at<float>(2, 0);
+	std::cout << "Proj 2 = " << proj << std::endl;
+	pt = cv::Matx41f(worldPoints[3].x, worldPoints[3].y, worldPoints[3].z, 1);
+	proj = m_cam1Info.camMat *  m_Camera2Face.rowRange(0, 3) * Mat(pt);
+	proj = proj / proj.at<float>(2, 0);
+	std::cout << "Proj 3 = " << proj << std::endl;
 
 	if (m_test_mode)
 	{

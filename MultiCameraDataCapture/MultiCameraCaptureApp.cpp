@@ -85,11 +85,12 @@ bool MultiCameraCaptureApp::init()
 
 bool MultiCameraCaptureApp::initCams()
 {
-	int map[] = { 0,3,1,2 };
+	//int map[] = { 0,3,1,2 };
 	for (int i = 1; i < 10; i++)
 	{
 		cv::VideoCapture cap;
-		cap.open(map[i]);
+		//cap.open(map[i]);
+		cap.open(i);
 		if (cap.isOpened())
 		{
 			camInfo cam;

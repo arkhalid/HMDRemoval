@@ -53,6 +53,7 @@ private:
 		Texture* imageTex;
 		int imgWidth;
 		int imgHeight;
+		Mat Camera2Face;
 	};
 
 	mat4 m_projection;
@@ -65,7 +66,7 @@ private:
 	cv::Mat m_distMat;
 	bool m_untextured_mode;
 	bool m_saveImage; //enable saving the rendered scene
-
+	vector<CameraInfo> camList;
 	//Live image related variables
 	Texture* m_imageTex;
 	CameraInfo m_cam1Info;
